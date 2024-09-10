@@ -18,7 +18,7 @@ def extract_text_from_pdf(pdf_path):
 def extract_tables_from_pdf(pdf_path):
     all_tables = pd.DataFrame()  # Initialize an empty DataFrame for concatenation
     with pdfplumber.open(pdf_path) as pdf:
-        for page in pdf.pages:
+        for page in pdf.pages():
             tables = page.extract_tables()
             if tables:
                 for table in tables:
@@ -40,15 +40,16 @@ class EntityExtractorApp(QWidget):
         # Main layout
         main_layout = QHBoxLayout(self)
 
-        # Sidebar
+        # Sidebar (in a widget to apply style)
+        sidebar_widget = QWidget()
         sidebar = QVBoxLayout()
         sidebar_label = QLabel("PDF Comparison Tool\n\nDeveloped by: [Your Name]\n\nThis tool compares two PDFs based on text and tables extracted from them.")
         sidebar_label.setAlignment(Qt.AlignCenter)
         sidebar.addWidget(sidebar_label)
-        sidebar.setContentsMargins(10, 10, 10, 10)
+        sidebar_widget.setLayout(sidebar)
 
         # Styling for sidebar
-        sidebar.setStyleSheet("""
+        sidebar_widget.setStyleSheet("""
             background-color: #2C2F33;
             color: white;
             padding: 10px;
@@ -121,7 +122,7 @@ class EntityExtractorApp(QWidget):
             }
         """)
 
-        main_layout.addLayout(sidebar, 1)
+        main_layout.addWidget(sidebar_widget, 1)
         main_layout.addLayout(content_layout, 3)
 
         self.setWindowTitle("Advanced PDF Comparison Tool")
