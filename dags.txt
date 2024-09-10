@@ -1,0 +1,55 @@
+# airflow_dag.py
+
+from airflow import DAG
+from airflow.operators.python import PythonOperator
+from datetime import datetime
+from your_module import Datavalidation  # Import your class here
+
+# Function to handle data extraction
+def extract_data(**kwargs):
+    # Logic for extracting data
+    print("Extracting data")
+    # Optionally return data if you want to pass to the next step
+    return "extracted_data"
+
+# Function to handle data processing by calling process_data from Datavalidation class
+def process_data_task(**kwargs):
+    # Create an instance of Datavalidation
+    data_validation = Datavalidation()
+    
+    # Call the process_data method
+    data_validation.process_data()
+
+# Define default args for the DAG
+default_args = {
+    'owner': 'airflow',
+    'depends_on_past': False,
+    'start_date': datetime(2023, 9, 1),
+    'retries': 1,
+}
+
+# Define the DAG
+with DAG(
+    'data_validation_dag',
+    default_args=default_args,
+    description='A DAG to extract and validate data',
+    schedule_interval='@daily',
+    catchup=False,
+) as dag:
+
+    # Task to extract data
+    extract_data_task = PythonOperator(
+        task_id='extract_data_task',
+        python_callable=extract_data,
+        provide_context=True  # If you need to pass context
+    )
+
+    # Task to process data by calling the Datavalidation class's method
+    process_data_task = PythonOperator(
+        task_id='process_data_task',
+        python_callable=process_data_task,
+        provide_context=True  # If you need to pass context
+    )
+
+    # Define task dependencies
+    extract_data_task >> process_data_task  # extract_data_task runs before process_data_task
