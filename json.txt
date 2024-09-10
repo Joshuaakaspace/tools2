@@ -1,0 +1,28 @@
+import requests
+
+# API URL and API Key
+url = "https://openzii"
+api_key = "sassadsadas"
+
+# Headers
+headers = {
+    'Authorization': f'Bearer {api_key}',  # If API uses Bearer Token, otherwise adjust as needed
+    'Content-Type': 'application/json'
+}
+
+# Example payload (adjust based on the API documentation)
+payload = {
+    "prompt": "Your prompt goes here",
+    "processId": "Your Process ID"  # If you have a specific process ID to send
+}
+
+# Sending the request
+response = requests.post(url, json=payload, headers=headers)
+
+# Check the response
+if response.status_code == 200:
+    # Success - Do something with the response
+    print("Response:", response.json())
+else:
+    # Handle errors
+    print(f"Error {response.status_code}: {response.text}")
