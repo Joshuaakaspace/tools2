@@ -18,7 +18,8 @@ def parse_html_improved(url):
     
     # Extract and format tables
     tables = []
-    
+    unformatted_rows = []
+
     for table in soup.find_all('table'):
         headers = []
         rows = []
@@ -28,22 +29,33 @@ def parse_html_improved(url):
         if header_row:
             headers = [header.get_text(strip=True) for header in header_row.find_all(['th', 'td'])]
 
-        # Extract table rows as key-value pairs
+        # Extract table rows
         for row in table.find_all('tr')[1:]:
             values = [value.get_text(strip=True) for value in row.find_all('td')]
-            if headers and values:
-                # If the number of headers doesn't match values, use what's available
-                row_data = {headers[i]: values[i] for i in range(min(len(headers), len(values)))}
+            
+            if len(headers) == len(values):
+                # If the number of headers matches the number of values, pair them
+                row_data = {headers[i]: values[i] for i in range(len(headers))}
                 tables.append(row_data)
+            else:
+                # If there's a mismatch, just append the values as a list
+                unformatted_rows.append(values)
     
     # Prepare final output: Combine paragraphs and tables
     output = "\n\n".join(paragraphs) + "\n\n"
     
+    # Add formatted tables with headers
     for table in tables:
         for key, value in table.items():
             output += f"{key}: {value}\n"
         output += "\n"  # Add a newline after each table
 
+    # Add unformatted rows without headers
+    if unformatted_rows:
+        output += "Unformatted Table Rows:\n"
+        for row in unformatted_rows:
+            output += f"{', '.join(row)}\n"
+    
     return output
 
 # Example usage with a URL
