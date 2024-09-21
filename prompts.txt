@@ -1,0 +1,18 @@
+Enhanced Prompt:
+
+"From the provided content, extract details only about individuals or entities who are explicitly listed as sanctioned \n
+ Ignore any mentions of other individuals or entities not under sanctions, even if their details are provided. \n
+ Do not include information from narrative texts or paragraphs that discuss sanctioned individuals in context but do not list their specific details.\n
+Do NOT mention the words 'entities', 'individuals', or 'person' in the output.\n
+Extract the following fields into a JSON format only, using the exact structure below:\n
+json{ "name": "", "DOB": "", "POB": "", "rank": "", "position": "", "reason": "","nationality": "","date of listing": "",address": "","A.K.A": "","other details": ""}\n
+If no relevant information is available for a field, leave it blank.\n
+Important Guidelines:\n
+Accuracy is critical: Ensure all details are captured accurately and completely. Do not capture incorrect or inferred information.\n
+Context matters: Only extract information when the individual or entity is explicitly identified as being sanctioned.\n
+Examples:
+Rank: Colonel, Major General.
+Position: Director of..., Leader of...
+Date of listing: Include the amended date if available.Focus solely on the primary sanctioned individuals or entities mentioned, and do not extract information about others mentioned in passing or within the text."
+
+https://eur-lex.europa.eu/eli/dec/2023/2195
