@@ -10,16 +10,14 @@ try:
     # Navigate to the specified URL
     driver.get("https://gazette.gc.ca/rp-pr/p2/2024/2024-08-28/html/sor-dors167-eng.html")
 
-    # Locate the 'Justice Canada consolidation of the Special Economic Measures (Belarus) Regulations' list item
-    regulations_link = driver.find_element(By.XPATH, "//ul[@class='lst-spcd']//a[contains(text(), 'Special Economic Measures (Belarus) Regulations')]/../..")
+    # Locate the <li> element containing the specific link for 'Justice Canada consolidation of the Special Economic Measures (Belarus) Regulations'
+    target_li = driver.find_element(By.XPATH, "//li[.//a[contains(text(), 'Special Economic Measures (Belarus) Regulations') and not(contains(text(), 'Amending'))]]")
 
-    # Get the following list item
-    next_li = regulations_link.find_element(By.XPATH, './following-sibling::li[1]')
-    
-    # Find the link within that list item
-    link_element = next_li.find_element(By.TAG_NAME, 'a')
+    # Find the next sibling <li> element that contains the specific text 'Regulations Amending the Special Economic Measures (Belarus) Regulations'
+    next_link_li = target_li.find_element(By.XPATH, './following-sibling::li[1]')
 
-    # Get the href attribute to retrieve the URL
+    # Find the <a> element within that sibling <li> and extract the href attribute
+    link_element = next_link_li.find_element(By.TAG_NAME, 'a')
     link_url = link_element.get_attribute('href')
     print("URL found:", link_url)
 finally:
