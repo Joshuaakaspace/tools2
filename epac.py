@@ -1,3 +1,5 @@
+# Let's test the code snippet provided with a simulation
+
 import re
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -37,25 +39,21 @@ data = []
 # Keep track of the current PART value
 current_part = None
 
-# Loop over all the parts and entities
-for part_element in part_elements:
-    current_part = part_element.get_text()  # Update the PART value when encountered
-    # Extract entities under the current part
-    part_ul = part_element.find_next('ul', class_='noBullet')
-    if part_ul:
-        ids_under_part = part_ul.find_all('span', class_='lawlabel')
-        names_under_part = part_ul.find_all('div', class_='listItemText2')
-        
-        for id_item, name_item in zip(ids_under_part, names_under_part):
-            # Extract ID and Name
-            id_value = id_item.get_text()
-            name_value = name_item.get_text()
-            # Clean ID and extract details
+# Find each part and extract entities listed under it
+for part_element in soup.find_all('span', class_='HLabel'):
+    current_part = part_element.get_text()  # Set the current part
+    # Find the next sibling UL that contains the entities
+    next_ul = part_element.find_next('ul', class_='noBullet')
+    
+    # Extract IDs and names from the UL element
+    if next_ul:
+        for list_item in next_ul.find_all('li'):
+            id_value = list_item.find('span', class_='lawlabel').get_text()
+            name_value = list_item.find('div', class_='listItemText2').get_text()
             id_cleaned = re.sub(r'\D', '', id_value)
             data.append(extract_details(name_value, id_cleaned, current_part))
 
 # Convert the list of dictionaries into a DataFrame
 df = pd.DataFrame(data)
 
-# Display the DataFrame
-import ace_tools as tools; tools.display_dataframe_to_user(name="Individual Details with Parts", dataframe=df)
+import ace_tools as tools; tools.display_dataframe_to_user(name="Test Individual Details with Parts", dataframe=df)
