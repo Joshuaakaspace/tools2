@@ -35,19 +35,25 @@ for tag in soup.find_all(['p', 'ul']):
         for li in tag.find_all('li'):
             # Extract ID
             id_part = li.text.split()[0]
-            # Extract name and aliases
+            # Extract name (before the first parenthesis)
             name = li.text.split('(', 1)[0].split('\t')[-1].strip()
-            # Extract date of birth
-            dob = li.find(text=lambda x: "born on" in x).split("born on ")[1].split(')')[0].strip()
-            # Extract aliases
-            aliases = li.find(text=lambda x: "also known as" in x).split("also known as ")[1].split(')')[0].strip()
+
+            # Try to extract date of birth if present
+            dob = None
+            if "born on" in li.text:
+                dob = li.find(text=lambda x: "born on" in x).split("born on ")[1].split(')')[0].strip()
+
+            # Try to extract aliases if present
+            aliases = None
+            if "also known as" in li.text:
+                aliases = li.find(text=lambda x: "also known as" in x).split("also known as ")[1].split(')')[0].strip()
             
             # Append the extracted information to the list
             data.append({
                 'ID': id_part,
                 'Name': name,
-                'Date of Birth': dob,
-                'Also Known As': aliases,
+                'Date of Birth': dob if dob else 'N/A',
+                'Also Known As': aliases if aliases else 'N/A',
                 'Part': f'Part {current_part}' if current_part else 'Unknown Part'
             })
 
@@ -55,4 +61,4 @@ for tag in soup.find_all(['p', 'ul']):
 df = pd.DataFrame(data)
 
 # Display the dataframe
-import ace_tools as tools; tools.display_dataframe_to_user(name="Extracted Data with Parts", dataframe=df)
+import ace_tools as tools; tools.display_dataframe_to_user(name="Extracted Data with Handling Missing Fields", dataframe=df)
