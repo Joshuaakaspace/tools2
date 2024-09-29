@@ -1,74 +1,102 @@
-import requests
-from typing import Any, List, Optional, Mapping
-from pydantic import BaseModel, Field, validator
+from typing import Any, List, Optional
 from langchain_core.language_models.llms import LLM
 from langchain.callbacks.manager import CallbackManagerForLLMRun
+import requests
 
-# Create a separate Pydantic model for validation
-class OraChatLLMConfig(BaseModel):
-    api_token: str = Field(..., description="API token for authenticating with OraChat API")
-    base_url: str = Field(default='https://api.ora_chat.com/conversation', description="Base URL for the OraChat API")
-    model: Optional[str] = Field(default=None, description="Optional model to specify in the API call")
-    convo_token: Optional[str] = Field(default=None, description="Optional conversation token to maintain context")
+# Assuming 'ora' is your custom class that interacts with the model API
+class OraLLM:
+    def __init__(self, auth: str, engine: str):
+        if engine == 'llama2':
+            self.url = 'https://your-llama2-endpoint-url.com'  # Replace with actual URL
+        elif engine == 'gpt-3':
+            self.url = 'https://your-gpt3-endpoint-url.com'  # Replace with actual URL
+        else:
+            raise ValueError("Unsupported engine. Choose either 'llama2' or 'gpt-3'")
+        
+        self.headers = {'Authorization': f'Bearer {auth}'}
 
-    class Config:
-        extra = "forbid"
+    def chat(self, msg: str, model: Optional[str] = None, convo_token: Optional[str] = None):
+        body_json = {"message": msg}
+        if convo_token:
+            body_json['conversationToken'] = convo_token
 
-# Create the LLM class that inherits from LangChain's LLM
-class OraChatLLM(LLM):
-    """Custom LLM class for using the OraChat API."""
+        endpoint = f'/conversation?model_name={model}' if model else '/conversation'
 
-    def __init__(self, api_token: str, base_url: str = 'https://api.ora_chat.com/conversation', model: Optional[str] = None, convo_token: Optional[str] = None):
+        try:
+            response = requests.post(
+                self.url + endpoint, 
+                headers=self.headers, 
+                json=body_json, 
+                verify=False, 
+                timeout=1200
+            )
+            response.raise_for_status()
+            return response.json().get('reply', 'No reply found')
+        
+        except requests.exceptions.RequestException as e:
+            return f"Error occurred: {str(e)}"
+
+# LangChain Custom LLM wrapper for your OraLLM
+class CustomOraLLM(LLM):
+    def __init__(self, auth: str, engine: str):
         """
-        Initialize the OraChatLLM with an API token, model, and conversation token.
-
-        This class uses Pydantic to validate the configuration, but does not inherit from it.
+        Custom LLM class for using your organization's model via OraLLM.
+        
+        Parameters:
+        - auth: Authorization token for your organization's model.
+        - engine: Model engine (e.g., 'llama2' or 'gpt-3').
         """
-        # Use Pydantic model to validate and store configuration
-        self.config = OraChatLLMConfig(api_token=api_token, base_url=base_url, model=model, convo_token=convo_token)
+        super().__init__()
+        self.ora_llm = OraLLM(auth=auth, engine=engine)
 
     @property
     def _llm_type(self) -> str:
-        """Return the LLM type, used for logging."""
-        return "ora_chat"
-
-    def _call(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> str:
         """
-        Make an API call to OraChat using the specified prompt and return the response.
+        Defines the LLM type for logging purposes.
         """
-        if stop is not None:
-            raise ValueError("stop kwargs are not permitted.")
+        return "custom_ora_llm"
 
-        # Define the payload for the API call
-        payload = {
-            "message": prompt,
-            "model": self.config.model,  # Optionally use the model if available
-            "convo_token": self.config.convo_token,  # Optionally include the conversation token
-        }
+    def _call(self, prompt: str, stop: Optional[List[str]] = None, run_manager: Optional[CallbackManagerForLLMRun] = None) -> str:
+        """
+        Send the prompt to the custom OraLLM model and return the response.
+        
+        Parameters:
+        - prompt: The prompt to send to the model.
+        - stop: (optional) stop tokens not implemented in this example.
+        """
+        # Call the ora_llm chat function and get the response
+        response = self.ora_llm.chat(msg=prompt)
 
-        headers = {
-            "Authorization": f"Bearer {self.config.api_token}",
-            "Content-Type": "application/json"
-        }
+        # You can handle the 'stop' tokens here if necessary
+        if stop:
+            raise ValueError("Stop kwargs are not permitted.")
 
-        # Send the POST request to the OraChat API
-        response = requests.post(self.config.base_url, json=payload, headers=headers, verify=False)
-        response.raise_for_status()  # Ensure the request was successful
+        return response
 
-        # Return the 'reply' from the API response
-        return response.json().get('reply', '')
+# Example usage
+if __name__ == "__main__":
+    auth_token = "your_auth_token"  # Replace with your actual auth token
+    model_engine = "llama2"  # Or "gpt-3"
+    
+    # Instantiate the custom LLM with your credentials and engine
+    custom_llm = CustomOraLLM(auth=auth_token, engine=model_engine)
+    
+    # Use it like any other LLM in LangChain
+    response = custom_llm("What is the meaning of life?")
+    print(response)
 
-    @property
-    def _identifying_params(self) -> Mapping[str, Any]:
-        """Return a dictionary of identifying parameters."""
-        return {
-            "base_url": self.config.base_url,
-            "model": self.config.model,
-            "convo_token": self.config.convo_token,
-        }
+
+
+
+
+from langchain import LLMChain, PromptTemplate
+
+template = "You are a helpful assistant. {question}"
+prompt = PromptTemplate(template=template, input_variables=["question"])
+
+# Pass your custom LLM to LLMChain
+llm_chain = LLMChain(llm=custom_llm, prompt=prompt)
+
+# Run the chain with an input question
+result = llm_chain.run("What is the capital of France?")
+print(result)
