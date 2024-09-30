@@ -1,39 +1,45 @@
-# Updated function to handle names without capturing "and successor"
-def extract_info_updated(text):
-    # Updated name pattern to capture names up until the point of specific keywords like 'and successor'
-    name_pattern = r"([A-Z]+[A-Za-z\s\.]+)(?=\s(and|or)\s(successor|sub-unit|subsidiary))"
-    aka_pattern = r"aka\s([A-Za-z]+)"  # Captures 'aka Josh'
+import pdfplumber
+import pandas as pd
+from urllib.parse import unquote
+
+def extract_table_from_pdf(pdf_path):
+    tables = []
+    hyperlinks = {}
     
-    # Updated sub pattern to include extra details like 'blackwaters, sandpotters'
-    sub_pattern = r"(and successor(?:, sub-unit, or subsidiary thereof)?(?:\s[\w,\s]+)?)"
+    with pdfplumber.open(pdf_path) as pdf:
+        for page in pdf.pages:
+            # Extract tables
+            for table in page.extract_tables():
+                tables.extend(table)
+            
+            # Extract hyperlinks
+            for annot in page.hyperlinks:
+                if annot['uri']:
+                    key = (annot['x0'], annot['top'], annot['x1'], annot['bottom'])
+                    hyperlinks[key] = unquote(annot['uri'])
 
-    # Extract name
-    name_match = re.search(name_pattern, text)
-    name = name_match.group(0) if name_match else None
+    # Convert to DataFrame
+    df = pd.DataFrame(tables[1:], columns=tables[0])
 
-    # Extract aka
-    aka_match = re.search(aka_pattern, text)
-    aka = aka_match.group(1) if aka_match else None
+    # Add hyperlink columns
+    df['First_Column_Hyperlink'] = ''
+    df['Last_Column_Hyperlink'] = ''
 
-    # Extract sub
-    sub_match = re.search(sub_pattern, text)
-    sub = sub_match.group(0) if sub_match else None
+    for i, row in df.iterrows():
+        for char in page.chars:
+            char_key = (char['x0'], char['top'], char['x1'], char['bottom'])
+            if char_key in hyperlinks:
+                if char['x0'] == df.iloc[i, 0]['x0']:  # First column
+                    df.at[i, 'First_Column_Hyperlink'] = hyperlinks[char_key]
+                elif char['x1'] == df.iloc[i, -1]['x1']:  # Last column
+                    df.at[i, 'Last_Column_Hyperlink'] = hyperlinks[char_key]
 
-    return {
-        "Full Name": name,
-        "AKA": aka,
-        "Sub": sub
-    }
+    return df
 
-# Updating the input DataFrame with the new example including '.Ltd'
-df = pd.DataFrame({
-    'Name': [
-        'OTOBOT Project Group .Ltd and successor, sub-unit, or subsidiary thereof'
-    ]
-})
+# Usage
+pdf_path = 'path/to/your/pdf/file.pdf'
+result_df = extract_table_from_pdf(pdf_path)
+print(result_df)
 
-# Apply the updated extract_info function to the 'Name' column and create new columns
-df[['Full Name', 'AKA', 'Sub']] = df['Name'].apply(lambda x: pd.Series(extract_info_updated(x)))
-
-# Display the updated DataFrame
-import ace_tools as tools; tools.display_dataframe_to_user(name="Updated DataFrame with Full Name, AKA, Sub", dataframe=df)
+# Optionally, save to CSV
+result_df.to_csv('extracted_data.csv', index=False)
