@@ -1,11 +1,11 @@
-# Updated sub_pattern to capture additional text after the recognized patterns
+# Updated function to handle names without capturing "and successor"
 def extract_info_updated(text):
-    # Updated name pattern to capture names with two or more words
-    name_pattern = r"(\b[A-Z][a-z]+(?:\s[A-Z][a-z]+)*)"  # Captures multi-word names
+    # Updated name pattern to capture names up until the point of specific keywords like 'and successor'
+    name_pattern = r"([A-Z]+[A-Za-z\s\.]+)(?=\s(and|or)\s(successor|sub-unit|subsidiary))"
     aka_pattern = r"aka\s([A-Za-z]+)"  # Captures 'aka Josh'
     
     # Updated sub pattern to include extra details like 'blackwaters, sandpotters'
-    sub_pattern = r"(and any successor(?:, sub-unit, or subsidiary thereof)?(?:\s[\w,\s]+)?)"
+    sub_pattern = r"(and successor(?:, sub-unit, or subsidiary thereof)?(?:\s[\w,\s]+)?)"
 
     # Extract name
     name_match = re.search(name_pattern, text)
@@ -25,10 +25,10 @@ def extract_info_updated(text):
         "Sub": sub
     }
 
-# Sample DataFrame with the updated example
+# Updating the input DataFrame with the new example including '.Ltd'
 df = pd.DataFrame({
     'Name': [
-        'Peter Parker aka Spidey and any successor, sub-unit, or subsidiary thereof blackwaters, sandpotters'
+        'OTOBOT Project Group .Ltd and successor, sub-unit, or subsidiary thereof'
     ]
 })
 
