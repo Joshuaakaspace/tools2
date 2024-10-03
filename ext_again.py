@@ -33,22 +33,15 @@ def extract_table_data(html_content):
     
     return all_data
 
-# Function to convert the extracted data to a Markdown table
+# Function to convert the extracted data to Markdown format with headers and corresponding row data
 def data_to_markdown(data):
-    if not data:
-        return "No data to display."
+    markdown_str = ""
     
-    # Extract headers from the first dictionary entry
-    headers = data[0].keys()
-    
-    # Create Markdown header row
-    markdown_str = '| ' + ' | '.join(headers) + ' |\n'
-    markdown_str += '| ' + ' | '.join(['---'] * len(headers)) + ' |\n'
-    
-    # Add each row of data
+    # Iterate through each entry in the data
     for entry in data:
-        row = '| ' + ' | '.join(entry.values()) + ' |\n'
-        markdown_str += row
+        for header, value in entry.items():
+            markdown_str += f"**{header}**: {value}\n\n"  # Bold the header and show the value
+        markdown_str += "---\n"  # Separate each row with a horizontal line
     
     return markdown_str
 
