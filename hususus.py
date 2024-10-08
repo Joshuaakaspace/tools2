@@ -19,19 +19,6 @@ def add_unique_identifier(records):
         record['_unique_id'] = create_unique_identifier(record)
     return records
 
-# Helper function to extract a value from a path
-def extract_value_from_path(path, data):
-    obj = data
-    for key in path:
-        if isinstance(key, str) and key.startswith('root'):
-            continue  # Ignore the 'root' part of the path
-        try:
-            # Attempt to treat the key as an integer if it's supposed to be a list index
-            obj = obj[int(key)] if key.isdigit() else obj[key]
-        except (KeyError, IndexError, TypeError, ValueError):
-            return None
-    return obj
-
 # Function to process the differences and generate the required output format
 def process_differences(diff, original_records, updated_records):
     output = {
@@ -41,22 +28,20 @@ def process_differences(diff, original_records, updated_records):
     }
 
     # Handling additions (new records)
-    if 'dictionary_item_added' in diff:
-        for path in diff['dictionary_item_added']:
-            added_item = extract_value_from_path(path, updated_records)
-            if added_item:
-                id_value = added_item.get('_unique_id')
+    if 'iterable_item_added' in diff:
+        for path, added_item in diff['iterable_item_added'].items():
+            id_value = added_item.get('_unique_id')
+            if id_value:
                 output['added'].append({
                     'id': id_value,
                     'details': added_item
                 })
 
     # Handling deletions (removed records)
-    if 'dictionary_item_removed' in diff:
-        for path in diff['dictionary_item_removed']:
-            removed_item = extract_value_from_path(path, original_records)
-            if removed_item:
-                id_value = removed_item.get('_unique_id')
+    if 'iterable_item_removed' in diff:
+        for path, removed_item in diff['iterable_item_removed'].items():
+            id_value = removed_item.get('_unique_id')
+            if id_value:
                 output['deleted'].append({
                     'id': id_value,
                     'details': removed_item
@@ -115,4 +100,3 @@ compare_json_files(file1_path, file2_path, output_file_path)
 
 # Returning the path of the delta output file
 output_file_path
-s
