@@ -6,6 +6,12 @@ def load_json(file_path):
     with open(file_path, 'r') as f:
         return json.load(f)
 
+# Function to extract the ID from the 4th field in the object
+def get_id_from_object(item):
+    keys = list(item.keys())
+    id_field = keys[3]  # Assuming ID is the 4th field
+    return str(item[id_field])
+
 # Function to process the differences and generate the required output format
 def process_differences(diff, original, updated):
     output = []
@@ -13,7 +19,7 @@ def process_differences(diff, original, updated):
     # Handling additions
     if 'dictionary_item_added' in diff:
         for path in diff['dictionary_item_added']:
-            id_value = get_id_from_path(path)
+            id_value = get_id_from_path(path, updated)
             details = get_details_from_path(path, updated)
             output.append({
                 'id': id_value,
@@ -24,7 +30,7 @@ def process_differences(diff, original, updated):
     # Handling deletions
     if 'dictionary_item_removed' in diff:
         for path in diff['dictionary_item_removed']:
-            id_value = get_id_from_path(path)
+            id_value = get_id_from_path(path, original)
             details = get_details_from_path(path, original)
             output.append({
                 'id': id_value,
@@ -35,7 +41,7 @@ def process_differences(diff, original, updated):
     # Handling updates
     if 'values_changed' in diff:
         for path, change in diff['values_changed'].items():
-            id_value = get_id_from_path(path)
+            id_value = get_id_from_path(path, original)
             details_before = get_details_from_path(path, original)
             details_after = get_details_from_path(path, updated)
             output.append({
@@ -49,11 +55,20 @@ def process_differences(diff, original, updated):
 
     return output
 
-# Function to extract 'id' from a deepdiff path
-def get_id_from_path(path):
-    # Assuming id is always present in the path (customize this function for your actual path structure)
-    # Example path: "root['data'][1]['id']"
-    return path.split("['id']")[0].split('[')[-1].replace("']", "")
+# Function to extract the 'id' from a deepdiff path, assuming the 'id' is in the 4th field
+def get_id_from_path(path, data):
+    # Using the path to locate the correct object in the JSON and get the id from the 4th field
+    parts = path.replace("root", "").split("[")
+    obj = data
+    for part in parts:
+        if part:
+            key = part.replace("']", "").replace("'", "")
+            try:
+                obj = obj[int(key)] if key.isdigit() else obj[key]
+            except (KeyError, IndexError):
+                return None
+    # Extract the ID from the 4th field in the found object
+    return get_id_from_object(obj)
 
 # Function to extract details from the object at a deepdiff path
 def get_details_from_path(path, data):
@@ -69,8 +84,8 @@ def get_details_from_path(path, data):
                 return None
     return obj
 
-# Main function to compare two JSON files and print the differences in the required format
-def compare_json_files(file1, file2):
+# Main function to compare two JSON files and save the differences in the required format
+def compare_json_files(file1, file2, output_file):
     original = load_json(file1)
     updated = load_json(file2)
 
@@ -80,9 +95,19 @@ def compare_json_files(file1, file2):
     # Process the differences and generate output
     output = process_differences(diff, original, updated)
 
-    # Print the output
-    for entry in output:
-        print(f"id: {entry['id']}, action_type: {entry['action_type']}, details: {entry['details']}")
+    # Save the output to a file
+    with open(output_file, 'w') as f:
+        json.dump(output, f, indent=4)
+
+    return output_file
 
 # Example usage
-compare_json_files('file1.json', 'file2.json')
+file1_path = '/mnt/data/file1.json'
+file2_path = '/mnt/data/file2.json'
+output_file_path = '/mnt/data/delta_output_with_4th_id.json'
+
+# Compare the files and save the delta output
+compare_json_files(file1_path, file2_path, output_file_path)
+
+# Returning the path of the delta output file
+output_file_path
