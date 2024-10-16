@@ -1,3 +1,12 @@
+import requests
+import xml.etree.ElementTree as ET
+
+def fetch_data_from_url(url):
+    # Get the XML content from the URL
+    response = requests.get(url)
+    response.raise_for_status()  # Check if the request was successful
+    return response.text
+
 def extract_data_updated(xml_string):
     # Parse the XML data
     root = ET.fromstring(xml_string)
@@ -51,8 +60,18 @@ def extract_data_updated(xml_string):
     
     return extracted_data
 
-# Extract the information using the updated function
-result_test_updated = extract_data_updated(xml_data_test)
+# URL containing the XML data
+url = "https://example.com/data.xml"  # Replace with the actual URL
 
-# Display the result for the new test
-result_test_updated
+try:
+    # Fetch and extract data from the provided URL
+    xml_data = fetch_data_from_url(url)
+    result = extract_data_updated(xml_data)
+    
+    # Display the result
+    for entry in result:
+        print(entry)
+except requests.RequestException as e:
+    print(f"Error fetching data: {e}")
+except ET.ParseError as e:
+    print(f"Error parsing XML: {e}")
