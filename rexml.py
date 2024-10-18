@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 
 # URL for the XML data
-url = 'your_url_here'
+url = 'https://api.websfm.kz/v1/sanctions/sanction-weapon-old/xml/?category=dprk&category=iran'
 
 # Fetch XML data from URL
 response = requests.get(url)
@@ -22,7 +22,7 @@ if xml_data is not None:
     all_data = []
 
     # Loop over each <person> element in the XML
-    for person in root.findall('person'):
+    for person in root.findall('.//person'):
         data = {}
         data['num'] = person.find('num').text if person.find('num') is not None else 'N/A'
         information = person.find('information').text if person.find('information') is not None else 'N/A'
@@ -65,19 +65,7 @@ if xml_data is not None:
         # Checking for fields within 'Прочая информация'
         if 'Прочая информация:' in information:
             extra_info = information.split('Прочая информация:')[1]
-            # Dummy logic for extraction from extra info (adjust depending on actual XML content):
-            if 'designation' in extra_info:
-                data['designation'] = extra_info.split('designation:')[1].split('.')[0].strip()
-            if 'date_of_birth' in extra_info:
-                data['date_of_birth'] = extra_info.split('date_of_birth:')[1].split('.')[0].strip()
-            if 'place_of_birth' in extra_info:
-                data['place_of_birth'] = extra_info.split('place_of_birth:')[1].split('.')[0].strip()
-            if 'citizenship' in extra_info:
-                data['citizenship'] = extra_info.split('citizenship:')[1].split('.')[0].strip()
-            if 'passport_no' in extra_info:
-                data['passport_no'] = extra_info.split('passport_no:')[1].split('.')[0].strip()
-            if 'national_identification_no' in extra_info:
-                data['national_identification_no'] = extra_info.split('national_identification_no:')[1].split('.')[0].strip()
+            # Adjust extraction based on the format of extra information (if applicable)
         
         # Append the extracted data to the list
         all_data.append(data)
