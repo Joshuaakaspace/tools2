@@ -54,7 +54,7 @@ if xml_data is not None:
         # Extracting date
         data['date'] = person.find('date').text if person.find('date') is not None else 'N/A'
         
-        # Extracting placeholders for additional fields
+        # Placeholders for fields that are not clearly available in the XML
         data['designation'] = 'N/A'
         data['date_of_birth'] = 'N/A'
         data['place_of_birth'] = 'N/A'
@@ -65,8 +65,21 @@ if xml_data is not None:
         # Checking for fields within 'Прочая информация'
         if 'Прочая информация:' in information:
             extra_info = information.split('Прочая информация:')[1]
-            # Adjust extraction based on the format of extra information (if applicable)
-        
+
+            # Dummy logic for extraction from extra info (adjust based on actual XML content):
+            if 'designation' in extra_info:
+                data['designation'] = extra_info.split('designation:')[1].split('.')[0].strip()
+            if 'date_of_birth' in extra_info:
+                data['date_of_birth'] = extra_info.split('date_of_birth:')[1].split('.')[0].strip()
+            if 'place_of_birth' in extra_info:
+                data['place_of_birth'] = extra_info.split('place_of_birth:')[1].split('.')[0].strip()
+            if 'citizenship' in extra_info:
+                data['citizenship'] = extra_info.split('citizenship:')[1].split('.')[0].strip()
+            if 'passport_no' in extra_info:
+                data['passport_no'] = extra_info.split('passport_no:')[1].split('.')[0].strip()
+            if 'national_identification_no' in extra_info:
+                data['national_identification_no'] = extra_info.split('national_identification_no:')[1].split('.')[0].strip()
+
         # Append the extracted data to the list
         all_data.append(data)
 
