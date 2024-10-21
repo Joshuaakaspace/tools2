@@ -65,6 +65,9 @@ def log_last_updated_date(last_updated_date, log_file):
         file.write(last_updated_date)
 
 # Step 4: Function to download the Excel file and save it with date in filename
+import requests
+
+# Step 4: Function to download the Excel file using requests with headers
 def download_excel_file(download_url, last_updated_date, folder):
     # Ensure the artifacts folder exists
     if not os.path.exists(folder):
@@ -74,13 +77,22 @@ def download_excel_file(download_url, last_updated_date, folder):
     filename = f"terror_organization_designation_list_{last_updated_date.replace('.', '-')}.xlsx"
     output_file = os.path.join(folder, filename)
 
-    # Download the file
-    response = requests.get(download_url)
-    with open(output_file, "wb") as file:
-        file.write(response.content)
+    # Define headers (simulate a real browser request)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+    }
+
+    # Download the file with the proper headers
+    response = requests.get(download_url, headers=headers)
+    if response.status_code == 200:
+        with open(output_file, "wb") as file:
+            file.write(response.content)
+        print(f"Excel file downloaded successfully and saved as {output_file}")
+    else:
+        print(f"Failed to download file. Status code: {response.status_code}")
     
-    print(f"Excel file downloaded successfully and saved as {output_file}")
     return output_file
+
 
 # Step 5: Function to read the Excel file and set the first row as the header
 def read_excel_as_dataframe(excel_file):
