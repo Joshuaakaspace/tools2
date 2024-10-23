@@ -1,0 +1,87 @@
+{
+  "id": "imod_sdn_dag",
+  "displayName": "IMOD SDN Monitoring and Delta",
+  "desc": "IMOD Sanctions Data Download and Delta Processing",
+  "parms": {
+    "agentId": "IMOD",
+    "baseWorkingDir": "/opt/imod_sdn",
+    "sourceType": "IMOD",
+    "s3BucketName": "imod-sdn-data-dev"
+  },
+  "tags": ["Monitoring & Delta"],
+  "taskGroups": [
+    {
+      "id": "IMOD-DOWNLOAD-NEW",
+      "runType": "SEQ",
+      "tasks": [
+        {
+          "id": "IMOD-source-download",
+          "displayName": "[NEW] Download IMOD Sanction Data",
+          "actionType": "DATA_IO",
+          "actionId": "URL_FILE_DOWNLOADER",
+          "actionParms": {
+            "returnData": true,
+            "url": "https://nbctf.mod.gov.il/MinisterSanctions/Announcements/Documents/NBCTF%20Israel%20designation%20of%20Individuals%20XL.xlsx",
+            "fileType": "xlsx",
+            "outputFilenamePrefix": "IMOD"
+          }
+        }
+      ]
+    },
+    {
+      "id": "IMOD-delta-processing",
+      "dependencies": ["IMOD-DOWNLOAD-NEW"],
+      "runType": "SEQ",
+      "tasks": [
+        {
+          "id": "IMOD-delta-detection",
+          "displayName": "Delta Detection",
+          "actionType": "DATA_PROCESSOR",
+          "actionId": "DEEPDIFF_DELTA_DETECTOR",
+          "actionParms": {
+            "oldJsonData": "{{ task_instance.xcom_pull(task_ids='IMOD-source-download', key='jsonDataOld') }}",
+            "newJsonData": "{{ task_instance.xcom_pull(task_ids='IMOD-source-download', key='jsonDataNew') }}",
+            "outputFilenamePrefix": "IMOD_DELTA"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v6-schema-mapping",
+      "dependencies": ["IMOD-delta-processing"],
+      "runType": "SEQ",
+      "tasks": [
+        {
+          "id": "IMOD-v6-data-mapping",
+          "displayName": "V6 Data Mapping",
+          "actionType": "DATA_PROCESSOR",
+          "actionId": "JSON_DATA_MAPPER",
+          "actionParms": {
+            "jsonData": "{{ task_instance.xcom_pull(task_ids='IMOD-delta-detection', key='jsonData') }}",
+            "mappingTableFilePath": "/opt/imod_sdn/resources/mapping_tables/v6_mappings.xlsx",
+            "mappingTableSourceType": "xlsx",
+            "outputFilenamePrefix": "IMOD_V6_PROFILES"
+          }
+        }
+      ]
+    },
+    {
+      "id": "write-to-s3",
+      "dependencies": ["v6-schema-mapping"],
+      "runType": "SEQ",
+      "tasks": [
+        {
+          "id": "upload-s3",
+          "displayName": "Upload Results to S3",
+          "actionType": "DATA_IO",
+          "actionId": "S3_UPLOADER",
+          "actionParms": {
+            "inputFilePath": "{{ task_instance.xcom_pull(task_ids='IMOD-v6-data-mapping', key='outputFilename') }}",
+            "bucketName": "imod-sdn-data-dev",
+            "s3Key": "processed_data/{{ ds }}/imod_v6_profiles.json"
+          }
+        }
+      ]
+    }
+  ]
+}
