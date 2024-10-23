@@ -1,0 +1,33 @@
+{
+  "id": "imod_sdn_dag",
+  "displayName": "IMOD SDN Monitoring and Delta",
+  "desc": "IMOD Sanctions Data Download and Delta Processing",
+  "parms": {
+    "agentId": "IMOD",
+    "baseWorkingDir": "/opt/imod_sdn",
+    "sourceType": "IMOD",
+    "s3BucketName": "imod-sdn-data-dev"
+  },
+  "tags": ["Monitoring & Delta"],
+  "taskGroups": [
+    {
+      "id": "IMOD-delta-processing",
+      "runType": "SEQ",
+      "tasks": [
+        {
+          "id": "IMOD-delta-file-processing",
+          "displayName": "Process Delta File",
+          "actionType": "DATA_PROCESSOR",
+          "actionId": "PROCESS_DELTA_FILE",
+          "actionParms": {
+            "table_url": "https://nbctf.mod.gov.il/MinisterSanctions/Announcements/Documents/NBCTF%20Israel%20designation%20of%20Individuals%20XL.xlsx",
+            "excel_url": "https://nbctf.mod.gov.il/MinisterSanctions/Announcements/Documents/NBCTF%20Israel%20designation%20of%20Individuals%20XL.xlsx",
+            "lastUpdatedLogFile": "/opt/imod_sdn/last_updated_log.txt",
+            "artifactsFolder": "/opt/imod_sdn/artifacts",
+            "returnData": true
+          }
+        }
+      ]
+    }
+  ]
+}
