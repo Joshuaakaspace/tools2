@@ -31,9 +31,10 @@ def clean_up_extra_information(text, keywords):
     # Trim the text from the earliest occurrence of any keyword
     return text[:earliest_position].strip() if earliest_position < len(text) else text
 
-# Function to apply post-processing on relevant columns
-def post_process_dataframe(df, columns, keywords):
-    for column in columns:
+# Function to apply post-processing on every column in the DataFrame
+def post_process_dataframe_all_columns(df, keywords):
+    # Apply the cleanup to every column in the DataFrame
+    for column in df.columns:
         df[column] = df[column].apply(lambda x: clean_up_extra_information(str(x), keywords))
     return df
 
@@ -44,21 +45,12 @@ keywords = [
     'На основании менее достоверных источников', 'Паспорт №', 'Национальный идентификационный номер'
 ]
 
-# Relevant columns where the cleanup is needed
-columns_to_clean = [
-    'Обращение', 'Адрес', 'Дата внесения в перечень', 'Дата рождения', 
-    'Место рождения', 'Прочая информация', 'Гражданство', 'Паспорт №', 
-    'Национальный идентификационный номер'
-]
-
 # Load the provided file as a DataFrame
 df = pd.read_csv('/mnt/data/file-vdgnzLKQRmFm8uGamBKJOIVb', encoding='ISO-8859-1')
 
 # First, extract names using the improved regex
 df = extract_names_from_column(df)
 
-# Then, process the DataFrame by applying the cleanup logic
-df = post_process_dataframe(df, columns_to_clean, keywords)
+# Then, process the DataFrame by applying the cleanup to all columns
+df = post_process_dataframe_all_columns(df, keywords)
 
-# Display the updated DataFrame with extracted Name 1, Name 2, and cleaned-up fields
-import ace_tools as tools; tools.display_dataframe_to_user(name="Processed DataFrame with Fixed Name Extraction and Cleanup", dataframe=df)
